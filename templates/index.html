@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKS Tercih ve Hesaplama</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card-header { background-color: #0d6efd; color: white; font-weight: bold; }
+        .result-box { background-color: #e9ecef; border-left: 5px solid #0d6efd; padding: 20px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+<div id="flaskFormData" data-form='{{ form_data | tojson | safe }}' style="display: none;"></div>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="text-center mb-4 text-primary">YKS Tercih ve Hesaplama</h1>
+            
+            <form method="POST">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">Temel Bilgiler</div>
+                    <div class="card-body row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Diploma Notunuz (0-100)</label>
+                            <input type="number" step="0.01" min="0" max="100" class="form-control" name="diploma" required oninput="diplomaSinirla(this)">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hedef Puan Türü</label>
+                            <select class="form-select" name="puan_turu" id="puanTuruSelect" onchange="formuGuncelle()" required>
+                                <option value="TYT">TYT (Ön Lisans)</option>
+                                <option value="SAY">Sayısal (SAY)</option>
+                                <option value="EA">Eşit Ağırlık (EA)</option>
+                                <option value="SÖZ">Sözel (SÖZ)</option>
+                                <option value="DİL">Dil (DİL)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-success text-white">TYT Netleri (Tüm Bölümler İçin Zorunlu)</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <h6>Türkçe (40 Soru)</h6>
+                                <input type="number" min="0" max="40" class="form-control mb-1" name="tyt_turkce_d" id="tyt_turkce_d" placeholder="Doğru" oninput="toplamSinirla('tyt_turkce_d', 'tyt_turkce_y', 40)">
+                                <input type="number" min="0" max="40" class="form-control" name="tyt_turkce_y" id="tyt_turkce_y" placeholder="Yanlış" oninput="toplamSinirla('tyt_turkce_y', 'tyt_turkce_d', 40)">
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Matematik (40 Soru)</h6>
+                                <input type="number" min="0" max="40" class="form-control mb-1" name="tyt_mat_d" id="tyt_mat_d" placeholder="Doğru" oninput="toplamSinirla('tyt_mat_d', 'tyt_mat_y', 40)">
+                                <input type="number" min="0" max="40" class="form-control" name="tyt_mat_y" id="tyt_mat_y" placeholder="Yanlış" oninput="toplamSinirla('tyt_mat_y', 'tyt_mat_d', 40)">
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Sosyal (20 Soru)</h6>
+                                <input type="number" min="0" max="20" class="form-control mb-1" name="tyt_sos_d" id="tyt_sos_d" placeholder="Doğru" oninput="toplamSinirla('tyt_sos_d', 'tyt_sos_y', 20)">
+                                <input type="number" min="0" max="20" class="form-control" name="tyt_sos_y" id="tyt_sos_y" placeholder="Yanlış" oninput="toplamSinirla('tyt_sos_y', 'tyt_sos_d', 20)">
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Fen Bilimleri (20 Soru)</h6>
+                                <input type="number" min="0" max="20" class="form-control mb-1" name="tyt_fen_d" id="tyt_fen_d" placeholder="Doğru" oninput="toplamSinirla('tyt_fen_d', 'tyt_fen_y', 20)">
+                                <input type="number" min="0" max="20" class="form-control" name="tyt_fen_y" id="tyt_fen_y" placeholder="Yanlış" oninput="toplamSinirla('tyt_fen_y', 'tyt_fen_d', 20)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm" id="aytBloku">
+                    <div class="card-header bg-warning text-dark">AYT Netleri</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_mat">
+                                <h6>AYT Matematik (40 Soru)</h6>
+                                <input type="number" min="0" max="40" class="form-control mb-1" name="ayt_mat_d" id="ayt_mat_d" placeholder="Doğru" oninput="toplamSinirla('ayt_mat_d', 'ayt_mat_y', 40)">
+                                <input type="number" min="0" max="40" class="form-control" name="ayt_mat_y" id="ayt_mat_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_mat_y', 'ayt_mat_d', 40)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_edb">
+                                <h6>Edebiyat (24 Soru)</h6>
+                                <input type="number" min="0" max="24" class="form-control mb-1" name="ayt_edb_d" id="ayt_edb_d" placeholder="Doğru" oninput="toplamSinirla('ayt_edb_d', 'ayt_edb_y', 24)">
+                                <input type="number" min="0" max="24" class="form-control" name="ayt_edb_y" id="ayt_edb_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_edb_y', 'ayt_edb_d', 24)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_tar1">
+                                <h6>Tarih-1 (10 Soru)</h6>
+                                <input type="number" min="0" max="10" class="form-control mb-1" name="ayt_tar1_d" id="ayt_tar1_d" placeholder="Doğru" oninput="toplamSinirla('ayt_tar1_d', 'ayt_tar1_y', 10)">
+                                <input type="number" min="0" max="10" class="form-control" name="ayt_tar1_y" id="ayt_tar1_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_tar1_y', 'ayt_tar1_d', 10)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_cog1">
+                                <h6>Coğrafya-1 (6 Soru)</h6>
+                                <input type="number" min="0" max="6" class="form-control mb-1" name="ayt_cog1_d" id="ayt_cog1_d" placeholder="Doğru" oninput="toplamSinirla('ayt_cog1_d', 'ayt_cog1_y', 6)">
+                                <input type="number" min="0" max="6" class="form-control" name="ayt_cog1_y" id="ayt_cog1_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_cog1_y', 'ayt_cog1_d', 6)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_fiz">
+                                <h6>Fizik (14 Soru)</h6>
+                                <input type="number" min="0" max="14" class="form-control mb-1" name="ayt_fiz_d" id="ayt_fiz_d" placeholder="Doğru" oninput="toplamSinirla('ayt_fiz_d', 'ayt_fiz_y', 14)">
+                                <input type="number" min="0" max="14" class="form-control" name="ayt_fiz_y" id="ayt_fiz_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_fiz_y', 'ayt_fiz_d', 14)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_kim">
+                                <h6>Kimya (13 Soru)</h6>
+                                <input type="number" min="0" max="13" class="form-control mb-1" name="ayt_kim_d" id="ayt_kim_d" placeholder="Doğru" oninput="toplamSinirla('ayt_kim_d', 'ayt_kim_y', 13)">
+                                <input type="number" min="0" max="13" class="form-control" name="ayt_kim_y" id="ayt_kim_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_kim_y', 'ayt_kim_d', 13)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_biy">
+                                <h6>Biyoloji (13 Soru)</h6>
+                                <input type="number" min="0" max="13" class="form-control mb-1" name="ayt_biy_d" id="ayt_biy_d" placeholder="Doğru" oninput="toplamSinirla('ayt_biy_d', 'ayt_biy_y', 13)">
+                                <input type="number" min="0" max="13" class="form-control" name="ayt_biy_y" id="ayt_biy_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_biy_y', 'ayt_biy_d', 13)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_tar2">
+                                <h6>Tarih-2 (11 Soru)</h6>
+                                <input type="number" min="0" max="11" class="form-control mb-1" name="ayt_tar2_d" id="ayt_tar2_d" placeholder="Doğru" oninput="toplamSinirla('ayt_tar2_d', 'ayt_tar2_y', 11)">
+                                <input type="number" min="0" max="11" class="form-control" name="ayt_tar2_y" id="ayt_tar2_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_tar2_y', 'ayt_tar2_d', 11)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_cog2">
+                                <h6>Coğrafya-2 (11 Soru)</h6>
+                                <input type="number" min="0" max="11" class="form-control mb-1" name="ayt_cog2_d" id="ayt_cog2_d" placeholder="Doğru" oninput="toplamSinirla('ayt_cog2_d', 'ayt_cog2_y', 11)">
+                                <input type="number" min="0" max="11" class="form-control" name="ayt_cog2_y" id="ayt_cog2_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_cog2_y', 'ayt_cog2_d', 11)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_fel">
+                                <h6>Felsefe Grubu (12 Soru)</h6>
+                                <input type="number" min="0" max="12" class="form-control mb-1" name="ayt_fel_d" id="ayt_fel_d" placeholder="Doğru" oninput="toplamSinirla('ayt_fel_d', 'ayt_fel_y', 12)">
+                                <input type="number" min="0" max="12" class="form-control" name="ayt_fel_y" id="ayt_fel_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_fel_y', 'ayt_fel_d', 12)">
+                            </div>
+
+                            <div class="col-md-3 d-bilesen" id="bilesen_ayt_din">
+                                <h6>Din Kültürü (6 Soru)</h6>
+                                <input type="number" min="0" max="6" class="form-control mb-1" name="ayt_din_d" id="ayt_din_d" placeholder="Doğru" oninput="toplamSinirla('ayt_din_d', 'ayt_din_y', 6)">
+                                <input type="number" min="0" max="6" class="form-control" name="ayt_din_y" id="ayt_din_y" placeholder="Yanlış" oninput="toplamSinirla('ayt_din_y', 'ayt_din_d', 6)">
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm" id="dilBloku">
+                    <div class="card-header bg-danger text-white">YDT (Yabancı Dil Testi) Netleri</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <h6>YDT Dil Sınavı (80 Soru)</h6>
+                                <input type="number" min="0" max="80" class="form-control mb-1" name="ydt_d" id="ydt_d" placeholder="Doğru" oninput="toplamSinirla('ydt_d', 'ydt_y', 80)">
+                                <input type="number" min="0" max="80" class="form-control" name="ydt_y" id="ydt_y" placeholder="Yanlış" oninput="toplamSinirla('ydt_y', 'ydt_d', 80)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">Hesapla ve Bölümleri Bul</button>
+                </div>
+            </form>
+
+            {% if puan is not none %}
+            <div class="result-box shadow-sm rounded">
+                <h3 class="text-primary">Hesaplanan {{ tur }} Puanınız: <strong>{{ puan }}</strong></h3>
+                
+                {% if sonuclar %}
+                <p class="text-muted">Puanınızın yettiği bütün bölümler listeleniyor ({{ sonuclar|length }} sonuç bulundu):</p>
+                
+                <div class="mb-3">
+                    <input type="text" id="tabloAramaInput" class="form-control border-primary shadow-sm" placeholder="🔍 Üniversite veya Bölüm adı yazarak anında arayın..." onkeyup="tabloFiltrele()">
+                </div>
+
+                <div class="table-responsive mt-3" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover table-striped table-bordered align-middle" id="sonucTablosu">
+                        <thead class="table-dark" style="position: sticky; top: 0;">
+                            <tr>
+                                <th>Üniversiteler</th>
+                                <th>Bölümler</th>
+                                <th>Taban Puan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for uni, bolum, taban_puan in sonuclar %}
+                            <tr>
+                                <td>{{ uni }}</td>
+                                <td>{{ bolum }}</td>
+                                <td><span class="badge bg-success">{{ "%.2f"|format(taban_puan) }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning mt-3">
+                    Mevcut puanınızla veri tabanında girebileceğiniz herhangi bir yer bulunamadı.
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script>
+function toplamSinirla(aktifId, digerId, maxSoru) {
+    var aktifInput = document.getElementById(aktifId);
+    var digerInput = document.getElementById(digerId);
+
+    var aktifVal = parseInt(aktifInput.value) || 0;
+    var digerVal = parseInt(digerInput.value) || 0;
+
+    if (aktifVal < 0) {
+        aktifInput.value = 0;
+        aktifVal = 0;
+    }
+    if (aktifVal > maxSoru) {
+        aktifInput.value = maxSoru;
+        aktifVal = maxSoru;
+    }
+    if (aktifVal + digerVal > maxSoru) {
+        aktifInput.value = maxSoru - digerVal;
+    }
+}
+
+function diplomaSinirla(input) {
+    var val = parseFloat(input.value);
+    if (val > 100) input.value = 100;
+    if (val < 0) input.value = 0;
+}
+
+function formuGuncelle() {
+    var tur = document.getElementById("puanTuruSelect").value;
+    
+    var aytBloku = document.getElementById("aytBloku");
+    var dilBloku = document.getElementById("dilBloku");
+
+    var dersler = {
+        mat: document.getElementById("bilesen_ayt_mat"),
+        edb: document.getElementById("bilesen_ayt_edb"),
+        tar1: document.getElementById("bilesen_ayt_tar1"),
+        cog1: document.getElementById("bilesen_ayt_cog1"),
+        fiz: document.getElementById("bilesen_ayt_fiz"),
+        kim: document.getElementById("bilesen_ayt_kim"),
+        biy: document.getElementById("bilesen_ayt_biy"),
+        tar2: document.getElementById("bilesen_ayt_tar2"),
+        cog2: document.getElementById("bilesen_ayt_cog2"),
+        fel: document.getElementById("bilesen_ayt_fel"),
+        din: document.getElementById("bilesen_ayt_din")
+    };
+
+    aytBloku.style.display = "none";
+    dilBloku.style.display = "none";
+    for (var anahtar in dersler) {
+        if (dersler[anahtar]) dersler[anahtar].style.display = "none";
+    }
+
+    if (tur === "TYT") {
+    } else if (tur === "SAY") {
+        aytBloku.style.display = "block";
+        dersler.mat.style.display = "block";
+        dersler.fiz.style.display = "block";
+        dersler.kim.style.display = "block";
+        dersler.biy.style.display = "block";
+    } else if (tur === "EA") {
+        aytBloku.style.display = "block";
+        dersler.mat.style.display = "block";
+        dersler.edb.style.display = "block";
+        dersler.tar1.style.display = "block";
+        dersler.cog1.style.display = "block";
+    } else if (tur === "SÖZ") {
+        aytBloku.style.display = "block";
+        dersler.edb.style.display = "block";
+        dersler.tar1.style.display = "block";
+        dersler.cog1.style.display = "block";
+        dersler.tar2.style.display = "block";
+        dersler.cog2.style.display = "block";
+        dersler.fel.style.display = "block";
+        dersler.din.style.display = "block";
+    } else if (tur === "DİL") {
+        dilBloku.style.display = "block";
+    }
+}
+
+function tabloFiltrele() {
+    var input = document.getElementById("tabloAramaInput");
+    
+    var filter = input.value.toLocaleUpperCase('tr-TR');
+    
+    var table = document.getElementById("sonucTablosu");
+    var tr = table.getElementsByTagName("tr");
+
+    for (var i = 1; i < tr.length; i++) {
+        var tdUni = tr[i].getElementsByTagName("td")[0];
+        var tdBolum = tr[i].getElementsByTagName("td")[1];
+        if (tdUni || tdBolum) {
+            var txtValueUni = tdUni.textContent || tdUni.innerText;
+            var txtValueBolum = tdBolum.textContent || tdBolum.innerText;
+            
+            if (txtValueUni.toLocaleUpperCase('tr-TR').indexOf(filter) > -1 || 
+                txtValueBolum.toLocaleUpperCase('tr-TR').indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    var formElement = document.getElementById("flaskFormData");
+    
+    if (formElement) {
+        try {
+            var formData = JSON.parse(formElement.getAttribute("data-form"));
+            
+            if (formData && Object.keys(formData).length > 0) {
+                for (var key in formData) {
+                    var inputElemani = document.querySelector('[name="' + key + '"]');
+                    if (inputElemani) {
+                        inputElemani.value = formData[key];
+                    }
+                }
+            }
+        } catch (e) {
+            console.log("Form verileri doldurulurken bir hata oluştu:", e);
+        }
+    }
+    
+    formuGuncelle();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
